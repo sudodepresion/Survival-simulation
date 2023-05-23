@@ -2,15 +2,40 @@ import random
 import math
 import json
 
-# load the names
+# load data from json
 with open(r"C:\Users\HpPav\source\repos\Evo-learning\Evo-learning\NameData.json", 'r') as f:
     jsonData = json.load(f)
     NamesForHumans = jsonData["HumanNames"]
     NamesForDisasters = jsonData["DisasterNames"]
 
+with open(r"C:\Users\HpPav\source\repos\Evo-learning\Evo-learning\settingsData.json", 'r') as f:
+    jDSettings = json.load(f)
+    
+    # general
+    timeSpan = jDSettings["timeSpan"]# in years
+    hFac = jDSettings["hFac"] # hunting skill mutation factor
+    # human
+    rrc = jDSettings["rrc"] # Repopulation random chance in permile for humans
+    shsh = jDSettings["shsh"] # starting hunting skill humans
+    shshLions = jDSettings["shshLions"] # starting hunting skill Lions
+    maxChildren = jDSettings["maxChildren"] # the maximum amount of children one human can have
+    maxHumansAlive = jDSettings["maxHumansAlive"] # the maximum amount of people alve at any moment
+    humanSpeed = jDSettings["humanSpeed"] # max distance a human can cover in a day
+    saP = jDSettings["saP"] # starting amount people 
+    # lions
+    rrcLion = jDSettings["rrcLion"] # repopulation random chance in permile for lion
+    maxChildrenLion = jDSettings["maxChildrenLion"] # the maximum amount of children one lion can have
+    maxLionsAlive = jDSettings["maxLionsAlive"] # the maximum amount of lions alive at any moment
+    saL = jDSettings["saL"] # starting amount Lions
+    # Hybrids
+    rrcHybrid = jDSettings["rrcHybrid"] # repopulation random chance in promile for Hybrids
+    # mutation
+    mFac = jDSettings["mFac"] # age mutation Factor
+    dpc = jDSettings["dpc"] # disaster random chance in percent 
+    # dangers
+    murderChance = jDSettings["murderChance"] # chance that one Human murders another on any given day, in percent
+    lec = jDSettings["lec"] # lion encounter chance in percent
 
-#globals:
-debugMode = input("Do you want to activate Debug mode? (y/n)") # debug mode only show the yearly overview and the ending
 
 # fundamental functions, be carefull with them!
 
@@ -402,6 +427,8 @@ def resetLists():
     lodh = []
     
 def main():
+    global debugMode
+    debugMode = input("Do you want to activate Debug mode? (y/n)") # debug mode only show the yearly overview and the ending
     createPeopleNoOrigin(saP, 340, 450)
     createLionsNoOrigin(saL)
     for years in range(timeSpan+1):
@@ -414,33 +441,6 @@ def main():
         if years == timeSpan - 1:
             killAll(days,years)
 
-
-
-
-# Parameters
-timeSpan = 100 # in years
-# general - Human
-rrc = 175 # Repopulation random chance in 1/1000
-shsh = 1 # start hunting skill of humans
-shshLions = 3 # start hunting skill of lions
-maxChildren = 2
-maxHumansAlive = 150
-humanSpeed = 10
-saP = 20 # Starting amount People
-# general - Lion
-rrcLion = 165 # Repopulation random chance in 1/1000 for lions
-maxChildrenLion = 2
-maxLionsAlive = 150
-saL = 20 # starting amount Lions
-# general - Hybrid
-rrcHybrid = 150 # Repopulation random chance in 1/1000 for Hybrids
-# mutation
-hFac = 2 # hunting skill mutation Factor
-mFac = 25 # age mutation Factor
-# death
-dpc = 15 # disaster random chance
-murderChance = 10 # in Percent
-lec = 1 # lion encounter chance in percent
 
 
 

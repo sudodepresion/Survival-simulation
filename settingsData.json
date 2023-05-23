@@ -1,0 +1,20 @@
+{
+  "timeSpan": 100,
+  "rrc": 175,
+  "shsh": 1,
+  "shshLions": 3,
+  "maxChildren": 2,
+  "maxHumansAlive": 150,
+  "humanSpeed": 10,
+  "saP": 20,
+  "rrcLion": 165,
+  "maxChildrenLion": 2,
+  "maxLionsAlive": 150,
+  "saL": 20,
+  "rrcHybrid": 150,
+  "hFac": 2,
+  "mFac": 25,
+  "dpc": 15,
+  "murderChance": 10,
+  "lec": 1
+}
