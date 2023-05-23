@@ -22,11 +22,15 @@ with open(r"C:\Users\HpPav\source\repos\Evo-learning\Evo-learning\settingsData.j
     maxHumansAlive = jDSettings["maxHumansAlive"] # the maximum amount of people alve at any moment
     humanSpeed = jDSettings["humanSpeed"] # max distance a human can cover in a day
     saP = jDSettings["saP"] # starting amount people 
+    startingMinAgeHumans = jDSettings["startingMinAgeHumans"] # limits the age range of the original humans
+    startingMaxAgeHumans = jDSettings["startingMaxAgeHumans"] # limits the age range of the original humans
     # lions
     rrcLion = jDSettings["rrcLion"] # repopulation random chance in permile for lion
     maxChildrenLion = jDSettings["maxChildrenLion"] # the maximum amount of children one lion can have
     maxLionsAlive = jDSettings["maxLionsAlive"] # the maximum amount of lions alive at any moment
     saL = jDSettings["saL"] # starting amount Lions
+    startingMinAgeLions = jDSettings["startingMinAgeLions"] # limits the age range of the original lions
+    startingMaxAgeLions = jDSettings["startingMaxAgeLions"] # limits the age range of the original lions
     # Hybrids
     rrcHybrid = jDSettings["rrcHybrid"] # repopulation random chance in promile for Hybrids
     # mutation
@@ -83,6 +87,16 @@ lodL = list() # List of dead lions
 loH = list() # List of Hybrids
 lodH = list() # List of dead Hybrids
 
+# trackeing varibles
+
+yearlyDisasterAmount = 0
+allTimeDisasterAmount = 0
+
+yearlyLionEncounterAmount = 0
+allTimeLionEncounterAmount = 0
+
+
+
 class Person:
     def __init__(self,name:str,doB:int, age:int, parent1:object, parent2:object, huntingSkill:int, PosVec:list):
         self.name = name
@@ -123,9 +137,9 @@ class Hybrid():
         self.position = posVec
 
 
-def createLionsNoOrigin(number):
+def createLionsNoOrigin(number,startingMinAgeLions,startingMaxAgeLions):
     for i in range(number):
-        loL.append(Lion(0,random.randint(180,240),shshLions,randomVec(-10,10)))
+        loL.append(Lion(0,random.randint(startingMinAgeLions,startingMaxAgeLions),shshLions,randomVec(-10,10)))
 
 def createPeopleNoOrigin(number,minAge,maxAge):
     for i in range(number):
@@ -163,6 +177,10 @@ def murder(person1, victim, days, years):
 
 def lionEncounter(days, years):
     if len(loP) > 0 and len(loL) > 0:
+        global allTimeLionEncounterAmount
+        global yearlyLionEncounterAmount
+        allTimeLionEncounterAmount += 1
+        yearlyLionEncounterAmount += 1
         if debugMode == "y":
             print("-------------------------------")
             print("A lion has attacked!")
@@ -195,6 +213,10 @@ def massDeathAnouncement(choosenDisaster, numberOfDeathsLions, numberOfDeathsPeo
 
 def massDeath(numberOfDeathsPeople,numberOfDeathsLions, days, years):
     choosenDisaster = randElementOfList(NamesForDisasters)
+    global allTimeDisasterAmount
+    global yearlyDisasterAmount
+    yearlyDisasterAmount += 1
+    allTimeDisasterAmount += 1
     if debugMode == "y":
         massDeathAnouncement(choosenDisaster, numberOfDeathsLions, numberOfDeathsPeople)
     for i in range(numberOfDeathsPeople):
@@ -255,18 +277,20 @@ def createNewLion(days,years,parent1, parent2):
     parent1.children.append(child)
     parent2.children.append(child)
 
+
+
 def repopulation(days,years):
-    if len(loP) >= 2 and len(loP) <= maxHumansAlive : 
+    if len(loP) <= maxHumansAlive: 
         for person in loP:
             if len(person.children) < maxChildren:
                 if random.randint(0,1000) < rrc:
                     createNewPerson(days, years, randElementOfList(loP),randElementOfList(loP))
-    if len(loL) >= 2 and len(loL) <= maxLionsAlive: 
+    if len(loL) <= maxLionsAlive: 
         for lion in loL:
             if len(lion.children) < maxChildrenLion:
                 if random.randint(0,1000) < rrcLion:
                     createNewLion(days,years,randElementOfList(loL),randElementOfList(loL))
-    if len(loL) >= 2 and len(loP) >= 2:
+    if len(loL) >= 2:
         if random.randint(1,1000) < rrcHybrid:
             createNewHybrid(days,years,randElementOfList(loP),randElementOfList(loL))
                   
@@ -288,17 +312,7 @@ def createNewHybrid(days,years,parent1,parent2):
     parent1.children.append(newHybrid)
     parent2.children.append(newHybrid)
 
-
-
-
-def anounceNewDay(days,years):
-    print(f"Its the day {days} of the year {years}")
-
-def eventsOfTheDay(days,years):
-    if debugMode == "y":
-        anounceNewDay(days, years)      
-    repopulation(days,years)
-    # Collect the dead
+def dailyDeadCollection(days,years):
     for person in loP:
         if person.finalAge + person.dateOfBirth < days + (years * 365):
             deathHandler(person,days, years, "old age")
@@ -308,8 +322,9 @@ def eventsOfTheDay(days,years):
     for Hybrid in loH:
         if Hybrid.finalAge + Hybrid.dateOfBirth < days + (years * 365):
             deathHandler(Hybrid, days, years, "old age")
-    # disasters
-    if random.randint(0,100) < dpc * (len(loP)**2)/100:
+
+def dailyDeathCauses(days,years):
+    if random.randint(0,100) < dpc:
         massDeath(random.randint(round(len(loP)*0.5),round(len(loP)*0.6)),random.randint(round(len(loL)*0.5),round(len(loL)*0.6)), days, years)
     if random.randint(1,100) < murderChance :
         murder(randElementOfList(loP),randElementOfList(loP), days, years)
@@ -317,28 +332,52 @@ def eventsOfTheDay(days,years):
         murder(randElementOfList(loL),randElementOfList(loL), days, years)
     if random.randint(1,100) < lec:
         lionEncounter(days, years)
-    # movement
+
+def anounceNewDay(days,years):
+    print(f"Its the day {days} of the year {years}")
+
+def eventsOfTheDay(days,years):
+    if debugMode == "y":
+        anounceNewDay(days, years)      
+    
+    repopulation(days,years)
+    dailyDeadCollection(days,years)
+    dailyDeathCauses(days,years)
     dailyHumanMovement()
 
 def yearlyReport(year):
+    global yearlyDisasterAmount
+    global yearlyLionEncounterAmount
     print(f"------------------------------------------------------------------")
     print(f"The year {year} is over!")
+    print(f"There have been {yearlyDisasterAmount} disasters and {yearlyLionEncounterAmount} lion encounters!")
+    print(f"There are {len(loL)} Lions and {len(loH)} Hybrids alive")
     print(f"These {len(loP)} people are still alive:")
-    for person in loP:
-        print(f"{person.name:<12} | life expectancy:{round(person.finalAge):<12} | D-Res: {person.dr}")
+    if debugMode == "y":
+        for person in loP:
+            print(f"{person.name:<12} | life expectancy:{round(person.finalAge):<12} | D-Res: {person.dr}")
     print("------------------------------------------------------------------")
+    yearlyLionEncounterAmount = 0
+    yearlyDisasterAmount = 0
 
 def dailyHumanMovement():
     for person in loP:
         move(person,[random.randint(round(-humanSpeed),humanSpeed),random.randint(round(-humanSpeed),humanSpeed)])
 
+
+
+
 def endOfTheWorld(days,years,special:bool):
+    global allTimeDisasterAmount
+    global allTimeLionEncounterAmount
     print(f"-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_")
     print("Breaking News! The last person on earth just died!")
     if not special: # special only acours with the killALl() function
         if len(loL) > 0: print(f"The lions won! There are still {len(loL)} lions alive")
         else: print(f"The humans won by {days+(365*years)-lodL[len(lodL) - 1].dateOfDeath} days") 
     print(f"Survived until: {days}-{years}")
+    print(f"Number of disasters that ever happened: {allTimeDisasterAmount}")
+    print(f"Number of lion encounters that ever happened: {allTimeLionEncounterAmount}")
     print(f"Number of all humans that ever existed: {len(lodP)}")
     print(f"Number of all lions that ever existed: {len(lodL)}")
     print(f"Number of all Hybrids that ever existed: {len(lodH)}")
@@ -346,12 +385,12 @@ def endOfTheWorld(days,years,special:bool):
     printComparisonStatsLion()
     if len(lodH) > 0:
         printComparisonStatsHybrid()
-    if input("Get the family tree of the last survivor? (y/n)") == "y":
+    if input("Get the family tree of the last survivor? (y/n) >>> ") == "y":
        getFamilyTree(lodP[len(lodP) - 1])
-    if input("Get the family tree of the last Hybrid? (y/n)") == "y":
+    if input("Get the family tree of the last Hybrid? (y/n) >>> ") == "y":
        getFamilyTree(lodH[len(lodH) - 1])
-    if input("Do you want to run the simulation again? (y/n)") == "y":
-        resetLists()
+    if input("Do you want to run the simulation again? (y/n) >>> ") == "y":
+        resetListsAndCounters()
         main()
     else:   quit()
 
@@ -375,6 +414,7 @@ def printComparisonStatsHuman():
     print(f"life expectancy:    {round(firstHuman.finalAge,2):<12}--  {round(lastHuman.finalAge,2)}")
     print(f"hunting power:      {firstHuman.hs:<12}--  {round(lastHuman.hs,2)}")
     print(f"death reason:       {firstHuman.deathReason:<12}--  {lastHuman.deathReason}")
+    print(f"Born on day:        {firstHuman.dateOfBirth:<12}--  {lastHuman.dateOfBirth}")
     print(f"death time:         {firstHuman.dateOfDeath:<12}--  {lastHuman.dateOfDeath}")
     print(f"death position:     {vecToStr(firstHuman.position):<12}--  {vecToStr(lastHuman.position)}")
     print(f"Distance to origin: {round(getEuclDistance(firstHuman.position),2):<12}--  {round(getEuclDistance(lastHuman.position),2)}")
@@ -388,6 +428,7 @@ def printComparisonStatsLion():
     print(f"life expectancy:    {firstLion.finalAge:<12}--  {round(lastLion.finalAge,2)}")
     print(f"hunting power:      {firstLion.hs:<12}--  {round(lastLion.hs,2)}")
     print(f"death reason:       {firstLion.deathReason:<12}--  {lastLion.deathReason}")
+    print(f"Born on day:        {firstLion.dateOfBirth:<12}--  {lastLion.dateOfBirth}")
     print(f"death time:         {firstLion.dateOfDeath:<12}--  {lastLion.dateOfDeath}")
     print(f"death position:     {vecToStr(firstLion.position):<12}--  {vecToStr(lastLion.position)}")
     print(f"Distance to origin: {round(getEuclDistance(firstLion.position),2):<12}--  {round(getEuclDistance(lastLion.position),2)}")
@@ -399,9 +440,10 @@ def printComparisonStatsHybrid():
     print("-------------------------------------------------------------")
     print(f"                    1. Hybrid   --  last Hybrid")
     print(f"name:               {firstHybrid.name:<12}--  {lastHybrid.name}")
-    print(f"life expectancy:    {firstHybrid.finalAge:<12}--  {round(lastHybrid.finalAge,2)}")
-    print(f"hunting power:      {firstHybrid.hs:<12}--  {round(lastHybrid.hs,2)}")
+    print(f"life expectancy:    {round(firstHybrid.finalAge,2):<12}--  {round(lastHybrid.finalAge,2)}")
+    print(f"hunting power:      {round(firstHybrid.hs):<12}--  {round(lastHybrid.hs,2)}")
     print(f"death reason:       {firstHybrid.deathReason:<12}--  {lastHybrid.deathReason}")
+    print(f"Born on day:        {firstHybrid.dateOfBirth:<12}--  {lastHybrid.dateOfBirth}")
     print(f"death time:         {firstHybrid.dateOfDeath:<12}--  {lastHybrid.dateOfDeath}")
     print(f"death position:     {vecToStr(firstHybrid.position):<12}--  {vecToStr(lastHybrid.position)}")
     print(f"Distance to origin: {round(getEuclDistance(firstHybrid.position),2):<12}--  {round(getEuclDistance(lastHybrid.position),2)}")
@@ -409,6 +451,7 @@ def printComparisonStatsHybrid():
     print("-------------------------------------------------------------")
 
  
+
 def killAll(days,years):
     for lion in loL:
         deathHandler(lion, days,years,"Killed by a divine force")
@@ -416,7 +459,17 @@ def killAll(days,years):
         deathHandler(person, days,years,"Killed by a divine force")
     endOfTheWorld(days,years, True)
 
-def resetLists():
+def resetListsAndCounters():
+    global allTimeDisasterAmount
+    global allTimeLionEncounterAmount
+    global yearlyDisasterAmount
+    global yearlyLionEncounterAmount
+    
+    allTimeDisasterAmount = 0
+    allTimeLionEncounterAmount = 0
+    yearlyDisasterAmount = 0
+    yearlyLionEncounterAmount = 0
+
     lop  = [] 
     lodp = []
     
@@ -425,12 +478,14 @@ def resetLists():
     
     loh  = []
     lodh = []
+
+
     
 def main():
     global debugMode
-    debugMode = input("Do you want to activate Debug mode? (y/n)") # debug mode only show the yearly overview and the ending
-    createPeopleNoOrigin(saP, 340, 450)
-    createLionsNoOrigin(saL)
+    debugMode = input("Do you want to activate Debug mode? (y/n) >>> ") # debug mode only show the yearly overview and the ending
+    createPeopleNoOrigin(saP, startingMinAgeHumans, startingMaxAgeHumans)
+    createLionsNoOrigin(saL,startingMinAgeLions,startingMaxAgeLions)
     for years in range(timeSpan+1):
         for days in range(365):
             if len(loP) != 0:
@@ -440,8 +495,6 @@ def main():
         # end the simulation early incase it goes on past the given time span
         if years == timeSpan - 1:
             killAll(days,years)
-
-
 
 
 main()
